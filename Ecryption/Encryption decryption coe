@@ -1,0 +1,67 @@
+import numpy as np
+from utils import dec2bits, bits2dec
+
+sbox = np.load("sbox.npz")["sbox"]
+sboxinv = np.load("sbox.npz")["sboxinv"]
+
+player = np.load("player.npz")["player"]
+playerinv = np.load("player.npz")["playerinv"]
+
+
+def encrypt(pt, k, nrounds):
+    """
+        pt: plaintext
+        k: key
+        nrounds: number of rounds
+        return: the ciphertext as a np.array
+    """
+
+    # TODO
+    for i in range(0,nrounds) :
+        pt = np.bitwise_xor(pt,k)
+        pt = sbox[pt]
+        pt = dec2bits(bits2dec(pt[player])) 
+    pt = np.bitwise_xor(pt,k)       
+    
+    return pt
+
+
+def decrypt(ct, k, nrounds):
+    """
+        ct: ciphertext 
+        k: key
+        nrounds: number of rounds
+        return: the plaintext as a np.array
+    """
+    # TODO
+    for i in range(0,nrounds) :
+      ct = np.bitwise_xor(ct,k)
+      ct = dec2bits(bits2dec(ct[player]))
+      ct = sboxinv[pt]
+    ct = np.bitwise_xor(ct,k)
+
+    return ct
+
+
+if __name__ == "__main__":
+    print("LELEC2760: TP 1 - Ex 1")
+
+    print(" -> Run known answer tests")
+    key = [0, 1, 2, 3, 4, 5, 6, 7]
+    plain = [0, 7, 0, 2, 2, 0, 1, 2]
+    ctexts = [
+        [12, 11, 9, 1, 2, 13, 7, 5],
+        [6, 3, 9, 13, 6, 9, 7, 1],
+        [14, 15, 1, 4, 11, 9, 3, 4],
+    ]
+
+    for r in range(1, 4):
+        assert (ctexts[r - 1] == encrypt(plain, key, r)).all()
+        assert (plain == decrypt(ctexts[r - 1], key, r)).all()
+
+    print(" -> Run random tests")
+
+    for _ in range(100):
+        k = np.random.randint(0, 16, 8)
+        pt = np.random.randint(0, 16, 8)
+        assert (decrypt(encrypt(pt, k, 3), k, 3) == pt).all()
